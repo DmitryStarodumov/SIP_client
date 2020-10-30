@@ -13,8 +13,25 @@
 #include <pjmedia-codec.h>
 #include <iostream>
 
+#define TCP_PORT (3487)
+
+#define ADDRESS "127.0.0.1"
+#define BIG_DATA_LEN 8192
+
+static char bigdata[BIG_DATA_LEN];
+static char bigbuffer[BIG_DATA_LEN];
+
+#if defined(PJ_SOCKADDR_HAS_LEN) && PJ_SOCKADDR_HAS_LEN!=0
+# define CHECK_SA_ZERO_LEN(addr, ret) \
+if (((pj_addr_hdr*)(addr))->sa_zero_len != 0) \
+return ret
+#else
+# define CHECK_SA_ZERO_LEN(addr, ret)
+#endif
+
 namespace SIPclient {
 
+	using namespace std;
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
@@ -25,20 +42,13 @@ namespace SIPclient {
 	public ref class MyForm : public System::Windows::Forms::Form
 	{
 	public:
-		MyForm(void)
-		{
-			InitializeComponent();
-		}
+		MyForm(void) {InitializeComponent();}
 	protected:
-		~MyForm()
-		{
-			if (components)
-				delete components;
-		}
+		~MyForm() {if (components) delete components;}
+
 	private: System::Windows::Forms::Button^ CallBtn;
 	private: System::Windows::Forms::Button^ DeclineBtn;
 	private: System::Windows::Forms::TextBox^ textBox2;
-
 	private: System::Windows::Forms::TextBox^ textBox1;
 	private: System::Windows::Forms::TextBox^ textBox3;
 	private: System::Windows::Forms::Label^ label1;
@@ -47,12 +57,9 @@ namespace SIPclient {
 	private: System::Windows::Forms::Button^ StartClientBtn;
 	private: System::Windows::Forms::Button^ StopClientBtn;
 	private: System::Windows::Forms::TextBox^ SendMsgBox;
-
 	private: System::Windows::Forms::Button^ SendMsgBtn;
-	private: System::Windows::Forms::ListView^ MsgChat;
-
-
-
+	private: System::Windows::Forms::Panel^ panel1;
+	private: System::Windows::Forms::Label^ label4;
 	private: System::ComponentModel::Container^ components;
 
 #pragma region Windows Form Designer generated code
@@ -74,7 +81,9 @@ namespace SIPclient {
 			   this->StopClientBtn = (gcnew System::Windows::Forms::Button());
 			   this->SendMsgBox = (gcnew System::Windows::Forms::TextBox());
 			   this->SendMsgBtn = (gcnew System::Windows::Forms::Button());
-			   this->MsgChat = (gcnew System::Windows::Forms::ListView());
+			   this->panel1 = (gcnew System::Windows::Forms::Panel());
+			   this->label4 = (gcnew System::Windows::Forms::Label());
+			   this->panel1->SuspendLayout();
 			   this->SuspendLayout();
 			   // 
 			   // CallBtn
@@ -204,22 +213,29 @@ namespace SIPclient {
 			   this->SendMsgBtn->UseVisualStyleBackColor = true;
 			   this->SendMsgBtn->Click += gcnew System::EventHandler(this, &MyForm::SendMsgBtn_Click);
 			   // 
-			   // MsgChat
+			   // panel1
 			   // 
-			   this->MsgChat->HeaderStyle = System::Windows::Forms::ColumnHeaderStyle::Nonclickable;
-			   this->MsgChat->HideSelection = false;
-			   this->MsgChat->Location = System::Drawing::Point(57, 12);
-			   this->MsgChat->Name = L"MsgChat";
-			   this->MsgChat->Size = System::Drawing::Size(150, 223);
-			   this->MsgChat->TabIndex = 7;
-			   this->MsgChat->UseCompatibleStateImageBehavior = false;
+			   this->panel1->AutoScroll = true;
+			   this->panel1->Controls->Add(this->label4);
+			   this->panel1->Location = System::Drawing::Point(57, 12);
+			   this->panel1->Name = L"panel1";
+			   this->panel1->Size = System::Drawing::Size(150, 223);
+			   this->panel1->TabIndex = 8;
+			   // 
+			   // label4
+			   // 
+			   this->label4->AutoSize = true;
+			   this->label4->Location = System::Drawing::Point(4, 4);
+			   this->label4->Name = L"label4";
+			   this->label4->Size = System::Drawing::Size(0, 13);
+			   this->label4->TabIndex = 0;
 			   // 
 			   // MyForm
 			   // 
 			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			   this->ClientSize = System::Drawing::Size(484, 341);
-			   this->Controls->Add(this->MsgChat);
+			   this->Controls->Add(this->panel1);
 			   this->Controls->Add(this->StopClientBtn);
 			   this->Controls->Add(this->label3);
 			   this->Controls->Add(this->label2);
@@ -236,16 +252,82 @@ namespace SIPclient {
 			   this->MinimumSize = System::Drawing::Size(500, 380);
 			   this->Name = L"MyForm";
 			   this->Text = L"MyForm";
+			   this->panel1->ResumeLayout(false);
+			   this->panel1->PerformLayout();
 			   this->ResumeLayout(false);
 			   this->PerformLayout();
 
 		   }
 #pragma endregion
-	private: System::Void StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e) {}
+	private: System::Void StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e) {
+		label4->Text += "Server starting...\n";
+		pj_str_t s_ipv4 = pj_str(ADDRESS);
+		pj_str_t s;
+		pj_thread_desc a_thread_desc; 
+		pj_thread_t* a_thread;
+		// Create socket
+		pj_sock_t sock = pj_sock_socket(PJ_AF_INET, PJ_SOCK_STREAM, 0, 0);
+		if (sock != 0)
+		{
+			label4->Text += "Can't create socket\n";
+			pj_sock_close(sock);
+			return;
+		}
+		if (!pj_thread_is_registered()) {
+			pj_thread_register(NULL, a_thread_desc, &a_thread);
+		}
+		// Fill in a hint structure
+		pj_sockaddr_in hint;
+		hint.sin_family = PJ_AF_INET;
+		hint.sin_port = pj_htons(TCP_PORT);
+		hint.sin_addr = pj_inet_addr(pj_cstr(&s, ADDRESS));
+		/*if ((sock = pj_sock_bind(sock, &hint, sizeof(hint))) != 0) {
+			cerr << "...bind error" << endl;
+		}*///for server part
+
+		pj_inet_pton(pj_AF_INET(), &s_ipv4, &hint.sin_addr);
+		// Connect to server
+		int conResult = pj_sock_connect(sock, &hint, sizeof(hint));
+		if (conResult != 0)
+		{
+			label4->Text += "Can't connect to server\n";
+			pj_sock_close(sock);
+			return;
+		}
+		//Do-while loop to send and receive data
+		pj_ssize_t size = BIG_DATA_LEN;
+		do
+		{ //Prompt the user for some text
+			cin.get(bigdata, BIG_DATA_LEN);// getdata not works
+			if (bigdata > 0)		// Make sure the user has typed in something
+			{ //Send the text
+				int sendResult = pj_sock_send(sock, bigdata, &size, 0);
+				if (sendResult != PJ_INVALID_SOCKET)
+				{ //Wait for response
+					pj_bzero(bigdata, sizeof(BIG_DATA_LEN));
+					size = 100;
+					int bytesReceived = pj_sock_recv(sock, bigdata, &size, 0);
+					if (bytesReceived > 0)
+					{ //Echo response to console
+						label4->Text += "SERVER> %s", string(bigdata, 0, bytesReceived);
+					}
+				}
+			}
+		} while (bigdata > 0);
+	}
 	private: System::Void StopClientBtn_Click(System::Object^ sender, System::EventArgs^ e) {}
-	private: System::Void SendMsgBtn_Click(System::Object^ sender, System::EventArgs^ e) {}
+	private: System::Void SendMsgBtn_Click(System::Object^ sender, System::EventArgs^ e) {
+			label4->Text += SendMsgBox->Text;
+			label4->Text += "\n";
+	}
 	private: System::Void CallBtn_Click(System::Object^ sender, System::EventArgs^ e) {}
 	private: System::Void DeclineBtn_Click(System::Object^ sender, System::EventArgs^ e) {}
+
+
+
+
+
+
 	};
 }
 #endif
