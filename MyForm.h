@@ -3,22 +3,12 @@
 
 #include <pjlib.h>
 #include <pjlib-util.h>
-#include <pjnath.h>
 #include <pjsip.h>
 #include <pjsip_ua.h>
 #include <pjsip_simple.h>
 #include <pjsua-lib/pjsua.h>
 #include <pjmedia.h>
 #include <pjmedia-codec.h>
-#include <pj/types.h>
-#include <pj/assert.h>
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <openssl/rsa.h> // Алгоритм RSA
-#include <openssl/pem.h> // Для работы с файлами ключей
 
 namespace SIPclient {
 	using namespace System;
@@ -33,14 +23,8 @@ namespace SIPclient {
 	private: pj_status_t status;
 			 pj_sock_t sock;
 			 int how = PJ_SHUT_RDWR;
-			 char* _port = "5060";
 			 pj_uint16_t port = 5060;
-			 char* myAddress = " 192.168.0.107";
-			 char* address = " 192.168.0.107";
-	private: System::Windows::Forms::Button^ RegisterBtn;
-	private: System::Windows::Forms::TextBox^ pswdTxt;
-	private: System::Windows::Forms::Label^ label5;
-		     char* name = "username";
+			 char* myAddress = "192.168.0.107";
 			 void start_sip_stack();
 			 void stop_sip_stack();
 	public:
@@ -62,8 +46,9 @@ namespace SIPclient {
 		private: System::Windows::Forms::Label^ label3;
 		private: System::Windows::Forms::Button^ StartClientBtn;
 		private: System::Windows::Forms::Button^ StopClientBtn;
-		private: System::Windows::Forms::TextBox^ SendMsgBox;
-		private: System::Windows::Forms::Button^ SendMsgBtn;
+		private: System::Windows::Forms::Button^ RegisterBtn;
+		private: System::Windows::Forms::TextBox^ pswdTxt;
+		private: System::Windows::Forms::Label^ label5;
 		private: System::Windows::Forms::Panel^ panel1;
 		private: System::Windows::Forms::Label^ label4;
 		private: System::ComponentModel::Container^ components;
@@ -81,8 +66,6 @@ namespace SIPclient {
 		this->label3 = (gcnew System::Windows::Forms::Label());
 		this->StartClientBtn = (gcnew System::Windows::Forms::Button());
 		this->StopClientBtn = (gcnew System::Windows::Forms::Button());
-		this->SendMsgBox = (gcnew System::Windows::Forms::TextBox());
-		this->SendMsgBtn = (gcnew System::Windows::Forms::Button());
 		this->panel1 = (gcnew System::Windows::Forms::Panel());
 		this->label4 = (gcnew System::Windows::Forms::Label());
 		this->RegisterBtn = (gcnew System::Windows::Forms::Button());
@@ -94,7 +77,7 @@ namespace SIPclient {
 		// CallBtn
 		// 
 		this->CallBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->CallBtn->Location = System::Drawing::Point(231, 115);
+		this->CallBtn->Location = System::Drawing::Point(231, 122);
 		this->CallBtn->Name = L"CallBtn";
 		this->CallBtn->Size = System::Drawing::Size(75, 25);
 		this->CallBtn->TabIndex = 1;
@@ -105,7 +88,7 @@ namespace SIPclient {
 		// DeclineBtn
 		// 
 		this->DeclineBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->DeclineBtn->Location = System::Drawing::Point(306, 115);
+		this->DeclineBtn->Location = System::Drawing::Point(306, 122);
 		this->DeclineBtn->Name = L"DeclineBtn";
 		this->DeclineBtn->Size = System::Drawing::Size(75, 25);
 		this->DeclineBtn->TabIndex = 2;
@@ -116,7 +99,7 @@ namespace SIPclient {
 		// userTxt
 		// 
 		this->userTxt->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->userTxt->Location = System::Drawing::Point(231, 10);
+		this->userTxt->Location = System::Drawing::Point(231, 17);
 		this->userTxt->Name = L"userTxt";
 		this->userTxt->Size = System::Drawing::Size(150, 20);
 		this->userTxt->TabIndex = 3;
@@ -126,7 +109,7 @@ namespace SIPclient {
 		// serverIPTxt
 		// 
 		this->serverIPTxt->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->serverIPTxt->Location = System::Drawing::Point(231, 62);
+		this->serverIPTxt->Location = System::Drawing::Point(231, 69);
 		this->serverIPTxt->Name = L"serverIPTxt";
 		this->serverIPTxt->Size = System::Drawing::Size(150, 20);
 		this->serverIPTxt->TabIndex = 3;
@@ -136,7 +119,7 @@ namespace SIPclient {
 		// portTxt
 		// 
 		this->portTxt->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->portTxt->Location = System::Drawing::Point(231, 88);
+		this->portTxt->Location = System::Drawing::Point(231, 95);
 		this->portTxt->Name = L"portTxt";
 		this->portTxt->Size = System::Drawing::Size(150, 20);
 		this->portTxt->TabIndex = 3;
@@ -149,7 +132,7 @@ namespace SIPclient {
 		this->label1->AutoSize = true;
 		this->label1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 			static_cast<System::Byte>(204)));
-		this->label1->Location = System::Drawing::Point(387, 12);
+		this->label1->Location = System::Drawing::Point(387, 19);
 		this->label1->Name = L"label1";
 		this->label1->Size = System::Drawing::Size(77, 18);
 		this->label1->TabIndex = 5;
@@ -161,7 +144,7 @@ namespace SIPclient {
 		this->label2->AutoSize = true;
 		this->label2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 			static_cast<System::Byte>(204)));
-		this->label2->Location = System::Drawing::Point(387, 64);
+		this->label2->Location = System::Drawing::Point(387, 71);
 		this->label2->Name = L"label2";
 		this->label2->Size = System::Drawing::Size(79, 18);
 		this->label2->TabIndex = 5;
@@ -173,7 +156,7 @@ namespace SIPclient {
 		this->label3->AutoSize = true;
 		this->label3->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 			static_cast<System::Byte>(204)));
-		this->label3->Location = System::Drawing::Point(387, 90);
+		this->label3->Location = System::Drawing::Point(387, 97);
 		this->label3->Name = L"label3";
 		this->label3->Size = System::Drawing::Size(36, 18);
 		this->label3->TabIndex = 5;
@@ -182,7 +165,7 @@ namespace SIPclient {
 		// StartClientBtn
 		// 
 		this->StartClientBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->StartClientBtn->Location = System::Drawing::Point(57, 306);
+		this->StartClientBtn->Location = System::Drawing::Point(57, 249);
 		this->StartClientBtn->Name = L"StartClientBtn";
 		this->StartClientBtn->Size = System::Drawing::Size(75, 25);
 		this->StartClientBtn->TabIndex = 1;
@@ -193,36 +176,13 @@ namespace SIPclient {
 		// StopClientBtn
 		// 
 		this->StopClientBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->StopClientBtn->Location = System::Drawing::Point(132, 306);
+		this->StopClientBtn->Location = System::Drawing::Point(132, 249);
 		this->StopClientBtn->Name = L"StopClientBtn";
 		this->StopClientBtn->Size = System::Drawing::Size(75, 25);
 		this->StopClientBtn->TabIndex = 6;
 		this->StopClientBtn->Text = L"Stop Client";
 		this->StopClientBtn->UseVisualStyleBackColor = true;
 		this->StopClientBtn->Click += gcnew System::EventHandler(this, &MyForm::StopClientBtn_Click);
-		// 
-		// SendMsgBox
-		// 
-		this->SendMsgBox->AccessibleDescription = L"";
-		this->SendMsgBox->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->SendMsgBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
-			static_cast<System::Byte>(204)));
-		this->SendMsgBox->Location = System::Drawing::Point(57, 241);
-		this->SendMsgBox->Name = L"SendMsgBox";
-		this->SendMsgBox->Size = System::Drawing::Size(150, 22);
-		this->SendMsgBox->TabIndex = 3;
-		this->SendMsgBox->Tag = L"";
-		// 
-		// SendMsgBtn
-		// 
-		this->SendMsgBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->SendMsgBtn->Location = System::Drawing::Point(213, 240);
-		this->SendMsgBtn->Name = L"SendMsgBtn";
-		this->SendMsgBtn->Size = System::Drawing::Size(93, 25);
-		this->SendMsgBtn->TabIndex = 1;
-		this->SendMsgBtn->Text = L"Send Message";
-		this->SendMsgBtn->UseVisualStyleBackColor = true;
-		this->SendMsgBtn->Click += gcnew System::EventHandler(this, &MyForm::SendMsgBtn_Click);
 		// 
 		// panel1
 		// 
@@ -245,7 +205,7 @@ namespace SIPclient {
 		// RegisterBtn
 		// 
 		this->RegisterBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->RegisterBtn->Location = System::Drawing::Point(231, 146);
+		this->RegisterBtn->Location = System::Drawing::Point(231, 153);
 		this->RegisterBtn->Name = L"RegisterBtn";
 		this->RegisterBtn->Size = System::Drawing::Size(75, 25);
 		this->RegisterBtn->TabIndex = 9;
@@ -256,7 +216,7 @@ namespace SIPclient {
 		// pswdTxt
 		// 
 		this->pswdTxt->Anchor = System::Windows::Forms::AnchorStyles::None;
-		this->pswdTxt->Location = System::Drawing::Point(231, 36);
+		this->pswdTxt->Location = System::Drawing::Point(231, 43);
 		this->pswdTxt->Name = L"pswdTxt";
 		this->pswdTxt->Size = System::Drawing::Size(150, 20);
 		this->pswdTxt->TabIndex = 10;
@@ -268,7 +228,7 @@ namespace SIPclient {
 		this->label5->AutoSize = true;
 		this->label5->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
 			static_cast<System::Byte>(204)));
-		this->label5->Location = System::Drawing::Point(387, 35);
+		this->label5->Location = System::Drawing::Point(387, 42);
 		this->label5->Name = L"label5";
 		this->label5->Size = System::Drawing::Size(75, 18);
 		this->label5->TabIndex = 11;
@@ -278,7 +238,7 @@ namespace SIPclient {
 		// 
 		this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 		this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-		this->ClientSize = System::Drawing::Size(484, 341);
+		this->ClientSize = System::Drawing::Size(484, 291);
 		this->Controls->Add(this->label5);
 		this->Controls->Add(this->pswdTxt);
 		this->Controls->Add(this->RegisterBtn);
@@ -287,28 +247,24 @@ namespace SIPclient {
 		this->Controls->Add(this->label3);
 		this->Controls->Add(this->label2);
 		this->Controls->Add(this->label1);
-		this->Controls->Add(this->SendMsgBox);
 		this->Controls->Add(this->portTxt);
 		this->Controls->Add(this->serverIPTxt);
 		this->Controls->Add(this->userTxt);
 		this->Controls->Add(this->DeclineBtn);
 		this->Controls->Add(this->StartClientBtn);
-		this->Controls->Add(this->SendMsgBtn);
 		this->Controls->Add(this->CallBtn);
-		this->MaximumSize = System::Drawing::Size(500, 380);
-		this->MinimumSize = System::Drawing::Size(500, 380);
+		this->MaximumSize = System::Drawing::Size(500, 330);
+		this->MinimumSize = System::Drawing::Size(500, 330);
 		this->Name = L"MyForm";
 		this->Text = L"SIP Client";
 		this->panel1->ResumeLayout(false);
 		this->panel1->PerformLayout();
 		this->ResumeLayout(false);
 		this->PerformLayout();
-
 	}
 #pragma endregion
 	private: System::Void StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e); 
 	private: System::Void StopClientBtn_Click(System::Object^ sender, System::EventArgs^ e);
-	private: System::Void SendMsgBtn_Click(System::Object^ sender, System::EventArgs^ e);
 	private: System::Void CallBtn_Click(System::Object^ sender, System::EventArgs^ e);
 	private: System::Void DeclineBtn_Click(System::Object^ sender, System::EventArgs^ e);
 	private: System::Void ServerIPTxt_TextChanged(System::Object^ sender, System::EventArgs^ e);
