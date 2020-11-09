@@ -164,7 +164,7 @@ namespace SIPclient {
 		// 
 		// StartClientBtn
 		// 
-		this->StartClientBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
+		/*this->StartClientBtn->Anchor = System::Windows::Forms::AnchorStyles::None;
 		this->StartClientBtn->Location = System::Drawing::Point(57, 249);
 		this->StartClientBtn->Name = L"StartClientBtn";
 		this->StartClientBtn->Size = System::Drawing::Size(75, 25);
@@ -182,7 +182,7 @@ namespace SIPclient {
 		this->StopClientBtn->TabIndex = 6;
 		this->StopClientBtn->Text = L"Stop Client";
 		this->StopClientBtn->UseVisualStyleBackColor = true;
-		this->StopClientBtn->Click += gcnew System::EventHandler(this, &MyForm::StopClientBtn_Click);
+		this->StopClientBtn->Click += gcnew System::EventHandler(this, &MyForm::StopClientBtn_Click);*/
 		// 
 		// panel1
 		// 
@@ -263,8 +263,8 @@ namespace SIPclient {
 		this->PerformLayout();
 	}
 #pragma endregion
-	private: System::Void StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e); 
-	private: System::Void StopClientBtn_Click(System::Object^ sender, System::EventArgs^ e);
+	/*private: System::Void StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e); 
+	private: System::Void StopClientBtn_Click(System::Object^ sender, System::EventArgs^ e);*/
 	private: System::Void CallBtn_Click(System::Object^ sender, System::EventArgs^ e);
 	private: System::Void DeclineBtn_Click(System::Object^ sender, System::EventArgs^ e);
 	private: System::Void ServerIPTxt_TextChanged(System::Object^ sender, System::EventArgs^ e);

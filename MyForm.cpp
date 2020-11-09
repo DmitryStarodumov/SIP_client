@@ -33,7 +33,6 @@ struct app_config {
     char* sip_password = "2";
     char* sip_port = "5060";
 } app_cfg;
-
 static void app_exit()
 {   // check if player/recorder is active and stop them
     if (play_id != -1) pjsua_player_destroy(play_id);
@@ -94,7 +93,7 @@ static void error_exit(const char* title, pj_status_t status)
     system("pause");
     exit(0);
 }
-
+/*
 void SIPclient::MyForm::StartClientBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 	label4->Text += "Client starting...\n";
 	pj_str_t s_ipv4 = pj_str(myAddress);
@@ -145,7 +144,6 @@ void SIPclient::MyForm::StartClientBtn_Click(System::Object^ sender, System::Eve
     else label4->Text += "send/recv ok\n";
        // pj_sock_close(sock);
 }
-
 void SIPclient::MyForm::StopClientBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 	if (!status) {
 		pj_sock_shutdown(sock, how);
@@ -155,11 +153,10 @@ void SIPclient::MyForm::StopClientBtn_Click(System::Object^ sender, System::Even
 	}
 	else {label4->Text += "Not found any started client\n";}
 }
-
+*/
 void SIPclient::MyForm::CallBtn_Click(System::Object^ sender, System::EventArgs^ e) {
     label4->Text += "Starting call ... ";
     // build target sip-url
-    //char* sip_reg_uri = ("sip:%s@%s:%s", app_cfg.sip_user, app_cfg.sip_domain);
     //sprintf(sip_target_url, "sip:%s@%s", app_cfg.phone_number, app_cfg.sip_domain);
     //sprintf(sip_target_url, "sip:%s@192.168.172.1", app_cfg.phone_number, app_cfg.sip_domain);
     char sip_reg_uri[40];
@@ -169,37 +166,27 @@ void SIPclient::MyForm::CallBtn_Click(System::Object^ sender, System::EventArgs^
     status = pjsua_call_make_call(acc_id, &uri, 0, NULL, NULL, NULL);
     if (status != PJ_SUCCESS) error_exit("Error making call", status);
     if (status == PJ_SUCCESS) label4->Text += "Done.\n";
-
 }
-
 void SIPclient::MyForm::DeclineBtn_Click(System::Object^ sender, System::EventArgs^ e) {
-	pjsua_call_hangup_all();
-    if (acc_id != -1)
-    {
-        pjsua_acc_del(acc_id);
-    }
-    system("pause");
-
+    //pjsua_call_hangup(acc_id, 0, NULL, NULL);
+    pjsua_call_hangup_all();
+    if (acc_id != -1) {pjsua_acc_del(acc_id);}
     pjsua_destroy();
+    system("pause");
 }
-
 void SIPclient::MyForm::ServerIPTxt_TextChanged(System::Object^ sender, System::EventArgs^ e) {
     app_cfg.sip_domain = (char*)(System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(serverIPTxt->Text)).ToPointer();
 }
-
 void SIPclient::MyForm::PortTxt_TextChanged(System::Object^ sender, System::EventArgs^ e) {
 	port = System::Convert::ToInt32(portTxt->Text);
     app_cfg.sip_port = (char*)(System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(portTxt->Text)).ToPointer();
 }
-
 void SIPclient::MyForm::userTxt_TextChanged(System::Object^ sender, System::EventArgs^ e) {
     app_cfg.sip_user = (char*)(System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(userTxt->Text)).ToPointer();
 }
-
 void SIPclient::MyForm::pswdTxt_TextChanged(System::Object^ sender, System::EventArgs^ e) {
     app_cfg.sip_password = (char*)(System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(pswdTxt->Text)).ToPointer();
 }
-
 void SIPclient::MyForm::RegisterBtn_Click(System::Object^ sender, System::EventArgs^ e) {
     label4->Text += "Registering account ... ";
     // prepare account configuration
@@ -208,11 +195,12 @@ void SIPclient::MyForm::RegisterBtn_Click(System::Object^ sender, System::EventA
     // build sip-user-url
     char sip_user_url[40];
     sprintf(sip_user_url, "sip:%s@%s:%s", app_cfg.sip_user, app_cfg.sip_domain, app_cfg.sip_port);
+    //sprintf(sip_user_url, "sip:3460210@192.168.39.18:5060");
+   
     // build sip-provder-url
     char sip_provider_url[40];
     sprintf(sip_provider_url, "sip:%s:%s;transport=tcp", app_cfg.sip_domain, app_cfg.sip_port);
-    //sprintf(sip_provider_url, "sip:192.168.172.1");
-
+    //sprintf(sip_provider_url, "sip:192.168.39.18:5060;transport=tcp");
     // create and define account
     cfg.id = pj_str(sip_user_url);
     cfg.reg_uri = pj_str(sip_provider_url);
@@ -229,6 +217,32 @@ void SIPclient::MyForm::RegisterBtn_Click(System::Object^ sender, System::EventA
     if (status != PJ_SUCCESS) error_exit("Error starting pjsua", status);
     if (status == PJ_SUCCESS) label4->Text += "Done.\n";
 }
+void SIPclient::MyForm::start_sip_stack()
+{
+    pjsua_transport_id tcp_tp_id;
+    status = pjsua_create();
+    if (status != PJ_SUCCESS)
+        error_exit("Error in pjsua_create()", status);
+    pjsua_config cfg;
+    pjsua_config_default(&cfg);
+    // enable just 1 simultaneous call 
+    cfg.max_calls = 1;
+    // callback configuration		
+    cfg.cb.on_incoming_call = &on_incoming_call;
+    cfg.cb.on_call_media_state = &on_call_media_state;
+    cfg.cb.on_call_state = &on_call_state;
+    // initialize pjsua 
+    status = pjsua_init(&cfg, NULL, NULL);
+    if (status != PJ_SUCCESS) error_exit("Error in pjsua_init()", status);
+    // add TCP transport
+    pjsua_transport_config tcfg;
+    pjsua_transport_config_default(&tcfg);
+    tcfg.port = port;
+    status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &tcfg, &tcp_tp_id);
+    if (status != PJ_SUCCESS) error_exit("Error creating transport", status);
+}
+void SIPclient::MyForm::stop_sip_stack() { app_exit(); }
+
 /*
 void SIPclient::MyForm::AdjustTranVolume(pjsua_call_id call_id, float level)
 {
@@ -263,28 +277,3 @@ void SIPclient::MyForm::AdjustRecvVolume(pjsua_call_id call_id, float level)
         error_exit("Error adjust rx level", status);
 }
 */
-void SIPclient::MyForm::start_sip_stack()
-{
-    pjsua_transport_id tcp_tp_id;
-    status = pjsua_create();
-    if (status != PJ_SUCCESS)
-        error_exit("Error in pjsua_create()", status);
-    pjsua_config cfg;
-    pjsua_config_default(&cfg);
-    // enable just 1 simultaneous call 
-    cfg.max_calls = 1;
-    // callback configuration		
-    cfg.cb.on_incoming_call = &on_incoming_call;
-    cfg.cb.on_call_media_state = &on_call_media_state;
-    cfg.cb.on_call_state = &on_call_state;
-    // initialize pjsua 
-    status = pjsua_init(&cfg, NULL, NULL);
-    if (status != PJ_SUCCESS) error_exit("Error in pjsua_init()", status);
-    // add TCP transport
-    pjsua_transport_config tcfg;
-    pjsua_transport_config_default(&tcfg);
-    tcfg.port = port;
-    status = pjsua_transport_create(PJSIP_TRANSPORT_TCP, &tcfg, &tcp_tp_id);
-    if (status != PJ_SUCCESS) error_exit("Error creating transport", status);
-}
-void SIPclient::MyForm::stop_sip_stack() { app_exit(); }
